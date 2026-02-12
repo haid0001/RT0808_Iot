@@ -1,0 +1,55 @@
+
+
+services:
+
+  db:
+    image: postgres:15
+    container_name: tracking_db
+    restart: always
+    environment:
+      POSTGRES_USER: tracking_user
+      POSTGRES_PASSWORD: tracking_pass
+      POSTGRES_DB: tracking_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: tracking_backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://tracking_user:tracking_pass@db:5432/tracking_db
+    ports:
+      - "8000:8000"
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: tracking_mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+
+  sensor_gps:
+    build: ./sensor_gps
+    container_name: tracking_sensor_gps
+    ports:
+      - "5683:5683/udp"
+
+  frontend:
+    build: ./frontend
+    container_name: tracking_frontend
+    ports:
+      - "3000:80"
+
+
+
+volumes:
+  pgdata:
+

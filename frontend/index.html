@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GPS Tracking Dashboard</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #dashboard {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            gap: 30px;
+            font-weight: bold;
+        }
+
+        #map {
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+<div id="dashboard">
+    <div>📏 Distance: <span id="distance">0</span> m</div>
+    <div>🔋 Batterie: <span id="battery">--</span> %</div>
+    <div>🌡 Température: <span id="temperature">--</span> °C</div>
+</div>
+
+<div id="map"></div>
+
+<script>
+    const map = L.map('map').setView([48.8566, 2.3522], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let polyline = L.polyline([], {color: 'red'}).addTo(map);
+    let marker = null;
+
+    const client = mqtt.connect('ws://localhost:9001');
+
+    client.on('connect', function () {
+        console.log("Connected to MQTT");
+        client.subscribe('/tracking/1/gps');
+    });
+
+    client.on('message', function (topic, message) {
+        const data = JSON.parse(message.toString());
+
+        const latlng = [data.lat, data.lon];
+
+        if (!marker) {
+            marker = L.marker(latlng).addTo(map);
+        } else {
+            marker.setLatLng(latlng);
+        }
+
+        polyline.addLatLng(latlng);
+        map.panTo(latlng);
+
+        // Mise à jour dashboard
+        document.getElementById("distance").innerText = data.total_distance.toFixed(2);
+        document.getElementById("battery").innerText = data.battery.toFixed(1);
+        document.getElementById("temperature").innerText = data.temperature.toFixed(1);
+    });
+</script>
+
+</body>
+</html>
