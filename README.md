@@ -54,50 +54,60 @@ Ce projet implémente une architecture IoT complète en 5 couches intégrant :
 
 # 🚀 QUICK START
 
-## 1️ Lancer le projet
+## 1️) Lancer le projet
 
 À la racine du projet :
 
 ```bash
 docker compose up --build
-
-
+```
 Attendre que tous les services soient démarrés.
 
-2️ Accéder aux interfaces
+## 2️) Accéder aux interfaces
 
+```bash
 Backend: http://localhost:8000/docs
 
 Frontend : http://localhost:3000
+````
 
-3️ Tester le fonctionnement complet : http://localhost:3000
+## 3️) Tester le fonctionnement complet : http://localhost:3000
 
-Entrer un nom + email Cliquer sur "Démarrer Tracking"
+Étape A - Entrer un nom + email Cliquer sur "Démarrer Tracking".
 
-Cela crée automatiquement un runner , une session , Puis redirection vers la carte.
+Cela crée automatiquement un runner et une session. Puis créé une redirection vers la carte.
 
-Étape B – Lancer la collecte capteurs ,dans Swagger (http://localhost:8000/docs) :
+Étape B – Lancer la collecte capteurs dans Swagger (http://localhost:8000/docs) avec l'endpoint.
 
-Endpoint :
-
+## 4) Endpoint :
+```bash
 POST /api/poll/{session_id}
-Ajouter le header obligatoire : THREAD_SECRET_2026
+````
 
-Exécuter plusieurs fois , observer la carte , Sur la page tracking, le marqueur se déplace
-la distance augmente , La batterie diminue progressivement , la température varie légèrement , la trajectoire est dessinée
+Ajouter le header obligatoire : 
 
-Authentification Device
-Les capteurs sont protégés par une clé partagée :
+```bash
 THREAD_SECRET_2026
-Elle doit être envoyée dans le header .
+```
+Exécuter plusieurs fois, observer la carte. Sur la page tracking, le marqueur se déplace, la distance augmente, la batterie diminue progressivement, la température varie légèrement et la trajectoire est dessinée.
 
-Tests automatisés
+## 5) Authentification Device
+Les capteurs sont protégés par une clé partagée :
+```bash
+THREAD_SECRET_2026
+```
+Elle doit être envoyée dans le header.
+
+## 6) Tests automatisés
 Dans le container backend (ouvrez un autre terminal)
 
+```bash
 docker exec -it tracking_backend bash
 pytest
+```
+
 Résultat attendu :
 
+```bash
 4 passed : Tests API , Tests validation , Test End-to-End (CoAP → Backend → DB)
-
 ```
