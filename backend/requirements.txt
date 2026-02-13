@@ -5,3 +5,6 @@ sqlalchemy
 pydantic
 paho-mqtt
 aiocoap
+pytest
+httpx
+

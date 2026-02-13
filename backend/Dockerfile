@@ -14,10 +14,14 @@ RUN pip install --upgrade pip \
     && pip install sqlalchemy \
     && pip install pydantic \
     && pip install paho-mqtt \
-    && pip install aiocoap
+    && pip install aiocoap \
+    && pip install pytest \
+    && pip install httpx
+
 
 
 
 COPY app ./app
+COPY test ./test
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

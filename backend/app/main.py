@@ -13,11 +13,18 @@ from aiocoap import Context, Message
 from aiocoap.numbers.codes import Code
 DEVICE_SECRET = "THREAD_SECRET_2026"
 from fastapi import Header, HTTPException
-
-
-
-
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
+
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ---------------- MQTT SETUP ----------------
 
