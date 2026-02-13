@@ -48,6 +48,28 @@ services:
     ports:
       - "3000:80"
 
+  sensor_battery:
+    build: ./sensor_battery
+    container_name: tracking_sensor_battery
+    ports:
+      - "5684:5683/udp"
+
+  sensor_temperature:
+    build: ./sensor_temperature
+    container_name: tracking_sensor_temperature
+    ports:
+      - "5685:5683/udp"
+
+  sensor_leader:
+    build: ./sensor_leader
+    container_name: tracking_sensor_leader
+
+  sensor_router:
+    build: ./sensor_router
+    container_name: tracking_sensor_router
+
+
+
 
 
 volumes:

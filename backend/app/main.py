@@ -11,6 +11,9 @@ import paho.mqtt.client as mqtt
 import asyncio
 from aiocoap import Context, Message
 from aiocoap.numbers.codes import Code
+DEVICE_SECRET = "THREAD_SECRET_2026"
+from fastapi import Header, HTTPException
+
 
 
 
@@ -76,14 +79,44 @@ def haversine(lat1, lon1, lat2, lon2):
 
     return R * c
 
-async def fetch_coap_data():
-    protocol = await Context.create_client_context()
+# async def fetch_coap_data():
+#     protocol = await Context.create_client_context()
 
-    request = Message(code=Code.GET, uri="coap://sensor_gps:5683/gps")
+#     request = Message(code=Code.GET, uri="coap://sensor_gps:5683/gps")
 
-    response = await protocol.request(request).response
+#     response = await protocol.request(request).response
 
-    return json.loads(response.payload.decode())
+#     return json.loads(response.payload.decode())
+
+async def fetch_gps():
+    try:
+        protocol = await Context.create_client_context()
+        request = Message(code=Code.GET, uri="coap://sensor_gps:5683/gps")
+        response = await protocol.request(request).response
+        return json.loads(response.payload.decode())
+    except Exception as e:
+        return {"error": "GPS sensor unavailable"}
+
+
+
+async def fetch_battery():
+    try:
+        protocol = await Context.create_client_context()
+        request = Message(code=Code.GET, uri="coap://sensor_battery:5683/battery")
+        response = await protocol.request(request).response
+        return json.loads(response.payload.decode())
+    except Exception as e:
+        return {"error": "Battery sensor unavailable"}
+
+
+async def fetch_temperature():
+    try:
+        protocol = await Context.create_client_context()
+        request = Message(code=Code.GET, uri="coap://sensor_temperature:5683/temperature")
+        response = await protocol.request(request).response
+        return json.loads(response.payload.decode())
+    except Exception as e:
+        return {"error": "Temperature sensor unavailable"}
 
 
 # ---------------- ROUTES ----------------
@@ -196,16 +229,54 @@ def create_measurement(data: MeasurementCreate, db: Session = Depends(get_db)):
         "total_distance_m": round(session.total_distance, 2)
     }
 @app.post("/api/poll/{session_id}")
-async def poll_sensor(session_id: int, db: Session = Depends(get_db)):
+async def poll_sensor(
+    session_id: int,
+    db: Session = Depends(get_db),
+    x_device_key: str = Header(None)
+):
 
-    data = await fetch_coap_data()
+    if x_device_key != DEVICE_SECRET:
+        raise HTTPException(status_code=401, detail="Unauthorized device")
+
+    gps = await fetch_gps()
+    if "error" in gps:
+        return {"error": "GPS sensor unavailable"}
+
+    battery = await fetch_battery()
+    if "error" in battery:
+        return {"error": "Battery sensor unavailable"}
+
+    temperature = await fetch_temperature()
+    if "error" in temperature:
+        return {"error": "Temperature sensor unavailable"}
+
 
     measurement_data = MeasurementCreate(
         session_id=session_id,
-        lat=data["lat"],
-        lon=data["lon"],
-        battery=data["battery"],
-        temperature=data["temperature"]
+        lat=gps["lat"],
+        lon=gps["lon"],
+        battery=battery["battery"],
+        temperature=temperature["temperature"]
     )
 
     return create_measurement(measurement_data, db)
+
+
+@app.get("/api/sessions/{session_id}/history")
+def get_history(session_id: int, db: Session = Depends(get_db)):
+
+    measurements = db.query(models.Measurement).filter(
+        models.Measurement.session_id == session_id
+    ).order_by(models.Measurement.timestamp.asc()).all()
+
+    return [
+        {
+            "lat": m.lat,
+            "lon": m.lon,
+            "battery": m.battery,
+            "temperature": m.temperature,
+            "timestamp": m.timestamp
+        }
+        for m in measurements
+    ]
+
